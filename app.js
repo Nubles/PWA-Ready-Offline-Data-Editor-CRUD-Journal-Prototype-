@@ -2,13 +2,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const dbName = 'JournalDB';
     const storeName = 'entries';
     let db;
+    let currentFilter = { type: 'all', value: '' }; // type can be 'all', 'search', or 'tag'
 
     // UI Elements
     const entriesList = document.getElementById('entries-list');
     const searchInput = document.getElementById('search-input');
+    const tagsList = document.getElementById('tags-list');
     const entryIdInput = document.getElementById('entry-id');
     const entryTitleInput = document.getElementById('entry-title');
     const entryContentInput = document.getElementById('entry-content');
+    const entryTagsInput = document.getElementById('entry-tags');
     const newEntryBtn = document.getElementById('new-entry');
     const saveEntryBtn = document.getElementById('save-entry');
     const deleteEntryBtn = document.getElementById('delete-entry');
@@ -19,28 +22,34 @@ document.addEventListener('DOMContentLoaded', () => {
         db = await idb.openDB(dbName, 1, {
             upgrade(db) {
                 if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                    const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('tags', 'tags', { multiEntry: true });
                 }
             },
         });
         console.log('Database initialized.');
         loadEntries();
+        renderTagsList();
     }
 
-    async function loadEntries(filter = '') {
+    async function loadEntries() {
         if (!db) return;
         let allEntries = await db.getAll(storeName);
         let entriesToRender = allEntries;
 
-        const lowerCaseFilter = filter.toLowerCase().trim();
-        if (lowerCaseFilter) {
+        // Apply filters based on the current state
+        if (currentFilter.type === 'search' && currentFilter.value) {
+            const lowerCaseFilter = currentFilter.value.toLowerCase().trim();
             entriesToRender = allEntries.filter(entry =>
                 entry.title.toLowerCase().includes(lowerCaseFilter) ||
                 entry.content.toLowerCase().includes(lowerCaseFilter)
             );
+        } else if (currentFilter.type === 'tag' && currentFilter.value) {
+            const tagToFilter = currentFilter.value;
+            entriesToRender = allEntries.filter(entry => entry.tags && entry.tags.includes(tagToFilter));
         }
 
-        entriesToRender.sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
+        entriesToRender.sort((a, b) => b.timestamp - a.timestamp);
         renderEntriesList(entriesToRender);
     }
 
@@ -51,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             entryIdInput.value = entry.id;
             entryTitleInput.value = entry.title;
             entryContentInput.value = entry.content;
+            entryTagsInput.value = entry.tags ? entry.tags.join(', ') : '';
             setActiveEntry(id);
         }
     }
@@ -59,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = parseInt(entryIdInput.value, 10);
         const title = entryTitleInput.value.trim();
         const content = entryContentInput.value.trim();
+        const tags = entryTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
         const timestamp = new Date().getTime();
 
         if (!title || !content) {
@@ -66,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const entry = { title, content, timestamp };
+        const entry = { title, content, timestamp, tags };
 
         if (id) {
             // Update existing entry
@@ -79,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback('Entry saved successfully!');
         }
         loadEntries();
+        renderTagsList();
     }
 
     async function deleteEntry() {
@@ -87,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.delete(storeName, id);
             clearEditor();
             loadEntries();
+            renderTagsList();
             showFeedback('Entry deleted successfully.');
         }
     }
@@ -95,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderEntriesList(entries) {
         entriesList.innerHTML = '';
         if (entries.length === 0) {
-            entriesList.innerHTML = '<li>No entries yet.</li>';
+            entriesList.innerHTML = '<li>No entries found.</li>';
             return;
         }
         entries.forEach(entry => {
@@ -107,10 +120,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function renderTagsList() {
+        if (!db) return;
+        const allEntries = await db.getAll(storeName);
+        const uniqueTags = [...new Set(allEntries.flatMap(entry => entry.tags || []))];
+
+        tagsList.innerHTML = '';
+        uniqueTags.sort().forEach(tag => {
+            const li = document.createElement('li');
+            li.textContent = tag;
+            li.dataset.tag = tag;
+            li.addEventListener('click', () => filterByTag(tag));
+            tagsList.appendChild(li);
+        });
+    }
+
+    function filterByTag(tag) {
+        // If the current tag is already active, clear the filter
+        if (currentFilter.type === 'tag' && currentFilter.value === tag) {
+            currentFilter.type = 'all';
+            currentFilter.value = '';
+            setActiveTag(null);
+        } else {
+            currentFilter.type = 'tag';
+            currentFilter.value = tag;
+            searchInput.value = ''; // Clear search input
+            setActiveTag(tag);
+        }
+        loadEntries();
+    }
+
     function clearEditor() {
         entryIdInput.value = '';
         entryTitleInput.value = '';
         entryContentInput.value = '';
+        entryTagsInput.value = '';
         setActiveEntry(null);
     }
 
@@ -118,6 +162,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const items = entriesList.querySelectorAll('li');
         items.forEach(item => {
             if (item.dataset.id == id) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function setActiveTag(tag) {
+        const items = tagsList.querySelectorAll('li');
+        items.forEach(item => {
+            if (item.dataset.tag === tag) {
                 item.classList.add('active');
             } else {
                 item.classList.remove('active');
@@ -149,9 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
     saveEntryBtn.addEventListener('click', saveEntry);
     deleteEntryBtn.addEventListener('click', deleteEntry);
     searchInput.addEventListener('input', () => {
-        loadEntries(searchInput.value);
+        currentFilter.type = 'search';
+        currentFilter.value = searchInput.value;
+        setActiveTag(null); // Clear active tag when searching
+        loadEntries();
     });
 
     // Initialize the application
     initDB();
+    renderTagsList();
 });

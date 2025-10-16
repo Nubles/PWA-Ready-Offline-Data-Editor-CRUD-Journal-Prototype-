@@ -13,12 +13,16 @@
             <h2>Journal Entries</h2>
             <input type="text" id="search-input" placeholder="Search entries...">
             <ul id="entries-list"></ul>
+            <hr>
+            <h2>Tags</h2>
+            <ul id="tags-list"></ul>
         </aside>
         <main class="main-editor">
             <div class="editor-container">
                 <input type="hidden" id="entry-id">
                 <input type="text" id="entry-title" placeholder="Enter title...">
                 <textarea id="entry-content" placeholder="Write your journal entry here..."></textarea>
+                <input type="text" id="entry-tags" placeholder="Add tags, comma-separated...">
                 <div class="action-buttons">
                     <button id="new-entry">New Entry</button>
                     <button id="save-entry">Save/Update</button>
