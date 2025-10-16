@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // UI Elements
     const entriesList = document.getElementById('entries-list');
+    const searchInput = document.getElementById('search-input');
     const entryIdInput = document.getElementById('entry-id');
     const entryTitleInput = document.getElementById('entry-title');
     const entryContentInput = document.getElementById('entry-content');
@@ -26,11 +27,21 @@ document.addEventListener('DOMContentLoaded', () => {
         loadEntries();
     }
 
-    async function loadEntries() {
+    async function loadEntries(filter = '') {
         if (!db) return;
-        const entries = await db.getAll(storeName);
-        entries.sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
-        renderEntriesList(entries);
+        let allEntries = await db.getAll(storeName);
+        let entriesToRender = allEntries;
+
+        const lowerCaseFilter = filter.toLowerCase().trim();
+        if (lowerCaseFilter) {
+            entriesToRender = allEntries.filter(entry =>
+                entry.title.toLowerCase().includes(lowerCaseFilter) ||
+                entry.content.toLowerCase().includes(lowerCaseFilter)
+            );
+        }
+
+        entriesToRender.sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
+        renderEntriesList(entriesToRender);
     }
 
     async function loadEntry(id) {
@@ -137,6 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
     newEntryBtn.addEventListener('click', clearEditor);
     saveEntryBtn.addEventListener('click', saveEntry);
     deleteEntryBtn.addEventListener('click', deleteEntry);
+    searchInput.addEventListener('input', () => {
+        loadEntries(searchInput.value);
+    });
 
     // Initialize the application
     initDB();
