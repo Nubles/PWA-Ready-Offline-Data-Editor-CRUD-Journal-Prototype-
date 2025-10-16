@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Journal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>Journal Entries</h2>
+            <ul id="entries-list"></ul>
+        </aside>
+        <main class="main-editor">
+            <div class="editor-container">
+                <input type="hidden" id="entry-id">
+                <input type="text" id="entry-title" placeholder="Enter title...">
+                <textarea id="entry-content" placeholder="Write your journal entry here..."></textarea>
+                <div class="action-buttons">
+                    <button id="new-entry">New Entry</button>
+                    <button id="save-entry">Save/Update</button>
+                    <button id="delete-entry">Delete</button>
+                </div>
+                <p id="feedback"></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

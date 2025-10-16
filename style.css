@@ -1,0 +1,110 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 25%;
+    max-width: 300px;
+    background-color: #fff;
+    border-right: 1px solid #ddd;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    color: #007aff;
+}
+
+#entries-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#entries-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+#entries-list li:hover {
+    background-color: #f0f0f0;
+}
+
+#entries-list li.active {
+    background-color: #007aff;
+    color: white;
+}
+
+.main-editor {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#entry-title {
+    font-size: 1.5em;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#entry-content {
+    flex: 1;
+    font-family: inherit;
+    font-size: 1em;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+}
+
+.action-buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#new-entry {
+    background-color: #007aff;
+}
+
+#save-entry {
+    background-color: #34c759;
+}
+
+#delete-entry {
+    background-color: #ff3b30;
+}
+
+#feedback {
+    margin-top: 10px;
+    color: #34c759;
+    text-align: center;
+}
